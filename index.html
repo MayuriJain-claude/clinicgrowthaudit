@@ -667,7 +667,7 @@ function renderReport(){
 
 /* Optional: log the lead to a Google Sheet (works when self-hosted) */
 function sendToSheet(r){
-  if(!CONFIG.sheetWebhook) return;
+  {const a=state.answers,L=state.lead;fetch("https://docs.google.com/forms/d/e/1FAIpQLSfWYfz7IzYERgYFfTjwFPAphlMJ2qFgwjoLZzMIwCSevYyxMQ/formResponse",{method:"POST",mode:"no-cors",headers:{"Content-Type":"application/x-www-form-urlencoded"},body:new URLSearchParams({"entry.362859938":L.name,"entry.7405683":L.clinic,"entry.31091164":L.cityname,"entry.1637958057":"+91"+L.phone,"entry.1537506221":L.email||"","entry.892398908":SPECIALTIES[a.spec].label,"entry.2021226615":r.score+"/100 ("+r.tier.name+")","entry.522882879":r.leadTier,"entry.438516235":inr(r.lo)+" - "+inr(r.hi)+" / month","entry.189870972":reportLink()}).toString()}).catch(()=>{});return;}
   const a = state.answers;
   const payload = {
     timestamp:new Date().toISOString(), ...state.lead,
