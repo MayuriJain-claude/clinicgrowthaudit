@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Clinic Revenue Leak Audit · Doctor's Digital Growth</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lora:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --teal-900:#0B3B39; --teal-700:#14615C; --teal-500:#1F8A82; --mint:#DFF3EC; --mint-2:#C4EADC;
+  --amber:#F2A93B; --amber-d:#C9831A; --bone:#FAF7F2; --ink:#10201F; --muted:#5B6B69; --line:#E3E8E6;
+  --red:#D2553F; --green:#2E9B6A; --radius:18px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:var(--bone);color:var(--ink);font-family:Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+body{min-height:100vh;display:flex;justify-content:center;padding:20px 16px 40px}
+.app{width:100%;max-width:560px}
+.brand{display:flex;align-items:center;gap:10px;margin-bottom:18px}
+.logo{width:34px;height:34px;border-radius:10px;background:var(--teal-900);display:grid;place-items:center;color:var(--amber);font-family:Lora,serif;font-weight:700;font-size:11px;letter-spacing:.02em}
+.brand b{font-size:14px;font-weight:600;display:block}
+.brand span{font-size:12px;color:var(--muted)}
+.card{background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:26px 22px;box-shadow:0 6px 30px rgba(11,59,57,.06)}
+h1,h2,h3{font-family:Lora,serif;line-height:1.2;color:var(--teal-900)}
+h1{font-size:30px;margin-bottom:12px}
+h2{font-size:22px;margin-bottom:6px}
+h3{font-size:17px;margin-bottom:4px}
+p{line-height:1.55}
+.lead{color:var(--muted);font-size:15.5px;margin-bottom:18px}
+.hero{background:var(--teal-900);color:#fff;border:none}
+.hero h1{color:#fff}
+.hero .lead{color:#CFE5E1}
+.hero h1 em{font-style:normal;color:var(--amber)}
+.gets{list-style:none;margin:6px 0 22px;display:grid;gap:10px}
+.gets li{display:flex;gap:10px;font-size:14.5px;line-height:1.45;color:#E8F4F1}
+.gets li i{flex:none;width:22px;height:22px;border-radius:50%;background:rgba(242,169,59,.18);color:var(--amber);display:grid;place-items:center;font-style:normal;font-size:12px;font-weight:700}
+.btn{appearance:none;border:none;cursor:pointer;font:600 16px Inter,sans-serif;border-radius:14px;padding:15px 20px;width:100%;display:flex;align-items:center;justify-content:center;gap:8px;text-decoration:none;transition:transform .1s, background .2s}
+.btn:active{transform:scale(.98)}
+.btn-amber{background:var(--amber);color:var(--teal-900)}
+.btn-amber:hover{background:#F6B754}
+.btn-teal{background:var(--teal-700);color:#fff}
+.btn-teal:hover{background:var(--teal-500)}
+.btn-ghost{background:var(--mint);color:var(--teal-900)}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+.meta{display:flex;gap:16px;justify-content:center;margin-top:14px;font-size:12.5px;color:#A9C9C3}
+.byline{margin-top:18px;padding-top:16px;border-top:1px solid rgba(255,255,255,.12);font-size:12.5px;color:#A9C9C3;line-height:1.5}
+.byline b{color:#fff;font-weight:600}
+/* progress */
+.top{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+.back{background:none;border:1px solid var(--line);width:38px;height:38px;border-radius:12px;cursor:pointer;font-size:18px;color:var(--teal-900);flex:none}
+.back:disabled{visibility:hidden}
+.bar{flex:1;height:8px;border-radius:99px;background:var(--line);overflow:hidden}
+.bar>div{height:100%;background:linear-gradient(90deg,var(--teal-500),var(--amber));border-radius:99px;transition:width .35s}
+.count{font-size:12.5px;color:var(--muted);flex:none;min-width:40px;text-align:right}
+.pill{display:inline-block;font-size:11.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--teal-700);background:var(--mint);padding:5px 10px;border-radius:99px;margin-bottom:12px}
+.q{font-family:Lora,serif;font-size:21px;line-height:1.3;color:var(--teal-900);margin-bottom:6px}
+.sub{font-size:13.5px;color:var(--muted);margin-bottom:18px}
+.opts{display:grid;gap:10px}
+.opt{text-align:left;border:1.5px solid var(--line);background:#fff;border-radius:14px;padding:14px 16px;font:500 15px Inter,sans-serif;color:var(--ink);cursor:pointer;display:flex;align-items:center;gap:12px;transition:border-color .15s,background .15s}
+.opt:hover{border-color:var(--teal-500)}
+.opt .dot{flex:none;width:20px;height:20px;border-radius:50%;border:2px solid #C6D2CF;display:grid;place-items:center}
+.opt.sel{border-color:var(--teal-700);background:var(--mint)}
+.opt.sel .dot{border-color:var(--teal-700);background:var(--teal-700)}
+.opt.sel .dot::after{content:"";width:7px;height:7px;border-radius:50%;background:#fff}
+.fade{animation:fade .3s ease}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+/* form */
+.field{margin-bottom:14px}
+.field label{display:block;font-size:13px;font-weight:600;margin-bottom:6px;color:var(--teal-900)}
+.field input{width:100%;padding:13px 14px;border-radius:12px;border:1.5px solid var(--line);font:500 15px Inter,sans-serif;background:#fff;color:var(--ink)}
+.field input:focus{outline:none;border-color:var(--teal-500)}
+.field .err{font-size:12px;color:var(--red);margin-top:5px;display:none}
+.field.bad input{border-color:var(--red)}
+.field.bad .err{display:block}
+.phone{display:flex;gap:8px}
+.phone span{flex:none;padding:13px 12px;border-radius:12px;background:var(--mint);font-weight:600;color:var(--teal-900)}
+.consent{display:flex;gap:10px;align-items:flex-start;font-size:12.5px;color:var(--muted);margin:6px 0 18px;line-height:1.45}
+.consent input{margin-top:3px;accent-color:var(--teal-700);width:16px;height:16px;flex:none}
+.teaser{display:flex;align-items:center;gap:16px;background:var(--mint);border-radius:14px;padding:14px 16px;margin-bottom:20px}
+.teaser .blur{font-family:Lora,serif;font-size:34px;font-weight:700;color:var(--teal-900);filter:blur(7px);user-select:none}
+.teaser p{font-size:13.5px;color:var(--teal-900)}
+/* results */
+.stack{display:grid;gap:14px}
+.score-wrap{display:flex;align-items:center;gap:18px}
+.ring{flex:none}
+.tier{display:inline-block;font-size:12px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;padding:5px 10px;border-radius:99px;margin-bottom:8px}
+.leak{background:var(--teal-900);color:#fff;border:none}
+.leak h3{color:#A9C9C3;font-family:Inter,sans-serif;font-size:12.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase}
+.leak .amt{font-family:Lora,serif;font-size:32px;font-weight:700;color:var(--amber);margin:6px 0 4px}
+.leak p{color:#CFE5E1;font-size:14px}
+.leak details{margin-top:12px;font-size:12.5px;color:#A9C9C3}
+.leak summary{cursor:pointer;color:#fff;font-weight:600}
+.leak details p{font-size:12.5px;color:#A9C9C3;margin-top:6px}
+.perenq{margin-top:14px;background:rgba(242,169,59,.14);border:1px solid rgba(242,169,59,.35);border-radius:12px;padding:11px 13px;font-size:13.5px;color:#F6E3C2;line-height:1.45}
+.perenq b{color:var(--amber)}
+.streams{margin-top:16px;display:grid;gap:13px}
+.st-top{display:flex;justify-content:space-between;gap:10px;font-size:14px;color:#fff}
+.st-top b{color:var(--amber);white-space:nowrap}
+.st-bar{height:7px;border-radius:99px;background:rgba(255,255,255,.1);margin:6px 0 4px;overflow:hidden}
+.st-bar div{height:100%;border-radius:99px;background:var(--amber)}
+.st small{font-size:12px;color:#A9C9C3}
+.fix small{margin-top:2px}
+.diy,.dfy{margin-top:10px;border-radius:12px;padding:11px 12px}
+.diy{background:#F4F6F5}
+.dfy{background:#FFF6E6;border:1px solid #F4DDB3}
+.lbl{display:block;font-size:10.5px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin-bottom:4px}
+.dfy .lbl{color:var(--amber-d)}
+.dfy b{display:block;font-size:14px;color:var(--teal-900);margin-bottom:2px}
+.dfy p,.diy p{font-size:13px;color:var(--muted)}
+.dfy a{display:inline-block;margin-top:7px;font-size:13px;font-weight:600;color:var(--teal-700);text-decoration:none}
+.calc{margin-top:16px;border-radius:12px;background:rgba(255,255,255,.06);padding:4px 13px}
+.cl{display:flex;justify-content:space-between;gap:10px;padding:10px 0;border-top:1px solid rgba(255,255,255,.08);font-size:13.5px;color:#CFE5E1}
+.cl:first-child{border-top:none}
+.cl b{color:#fff;text-align:right;white-space:nowrap}
+.cl.tot b{color:var(--amber)}
+.cl.tot span{color:#fff;font-weight:600}
+.sec-h{display:flex;align-items:center;gap:10px;font-family:Lora,serif;font-size:19px;font-weight:700;color:var(--teal-900);margin:10px 0 -2px}
+.sec-h span{width:28px;height:28px;border-radius:8px;background:var(--teal-900);color:var(--amber);display:grid;place-items:center;font:700 14px Inter,sans-serif}
+.ic{flex:none;width:22px;height:22px;border-radius:50%;display:grid;place-items:center;font-size:12px;font-weight:700;color:#fff}
+.ic.ok{background:var(--green)}.ic.mid{background:var(--amber)}.ic.bad{background:var(--red)}
+.cmp{display:flex;gap:12px;padding:12px 0;border-top:1px solid var(--line)}
+.cmp:first-child{border-top:none}
+.cmp b{font-size:14px;color:var(--teal-900)}
+.cmp-r{display:grid;gap:2px;margin-top:3px;font-size:13px;color:var(--muted)}
+.cmp-r span:last-child{color:var(--teal-700)}
+.rv{display:flex;gap:12px;padding:11px 0;border-top:1px solid var(--line)}
+.rq{font-size:13px;color:var(--muted)}
+.ra{font-size:14px;font-weight:600;color:var(--ink);margin-top:2px}
+.rf{font-size:13px;color:var(--teal-700);margin-top:4px}
+.wk{display:flex;gap:14px;padding:13px 0;border-top:1px solid var(--line)}
+.wk:first-child{border-top:none;padding-top:2px}
+.wk-n{flex:none;width:64px;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--amber-d);padding-top:2px}
+.wk h4{font-size:15px;color:var(--teal-900);margin-bottom:3px}
+.wk p{font-size:13.5px;color:var(--muted)}
+.wk .wk-s{margin-top:5px;color:var(--teal-700)}
+.svc-row{padding:9px 0;border-top:1px solid #F4DDB3;font-size:13.5px}
+.svc-row b{display:block;color:var(--teal-900)}
+.svc-row span{color:var(--muted)}
+.pbars{display:grid;gap:12px;margin-top:4px}
+.pb-row{display:grid;grid-template-columns:96px 1fr 40px;gap:10px;align-items:center;font-size:13.5px}
+.pb-row .t{height:9px;border-radius:99px;background:var(--line);overflow:hidden}
+.pb-row .t div{height:100%;border-radius:99px}
+.pb-row b{text-align:right;font-weight:600}
+.fix{display:flex;gap:12px;padding:14px 0;border-top:1px solid var(--line)}
+.fix:first-of-type{border-top:none;padding-top:6px}
+.fix .n{flex:none;width:28px;height:28px;border-radius:8px;background:var(--amber);color:var(--teal-900);font-weight:700;display:grid;place-items:center;font-size:14px}
+.fix h4{font-size:15px;margin-bottom:3px;color:var(--teal-900)}
+.fix p{font-size:13.5px;color:var(--muted)}
+.fix small{display:inline-block;margin-top:5px;font-size:11px;font-weight:600;color:var(--teal-700);background:var(--mint);padding:3px 8px;border-radius:99px}
+.cta{background:linear-gradient(160deg,#FFF6E6,#fff);border-color:#F4DDB3}
+.cta .btns{display:grid;gap:10px;margin-top:16px}
+.note{font-size:11.5px;color:var(--muted);text-align:center;margin-top:14px;line-height:1.5}
+.radar text{font:600 11px Inter,sans-serif;fill:var(--teal-900)}
+.small-link{background:none;border:none;color:var(--teal-700);font:600 13px Inter,sans-serif;cursor:pointer;text-decoration:underline;margin-top:10px}
+</style>
+</head>
+<body>
+<div class="app" id="app"></div>
+
+<script>
+/* ================= CONFIG — edit these ================= */
+const CONFIG = {
+  // Your WhatsApp number with country code, digits only, e.g. "919876543210".
+  // Leave "" and WhatsApp will open and ask the doctor to pick a contact.
+  whatsapp: "",
+  // Optional booking link (Calendly, Cal.com, etc.). Leave "" to book via WhatsApp.
+  bookingUrl: "",
+  // Optional Google Apps Script web-app URL to log every lead in a Google Sheet.
+  // Works when this page is hosted on your own website (it's blocked inside claude.ai).
+  sheetWebhook: "",
+  // Public link of this page — used to build each doctor's full-report link.
+  reportUrl: "https://clinicgrowthaudit.doctorsdigitalgrowth.tech/",
+  brand: "Doctor's Digital Growth",
+  founder: "Mayuri Jain"
+};
+/* ======================================================= */
+
+const SPECIALTIES = [
+  {label:"Dermatology / Aesthetics", ltv:2.5, premium:"lasers, hair restoration, anti-ageing"},
+  {label:"Dental", ltv:2.0, premium:"implants, aligners, smile design"},
+  {label:"IVF / Fertility", ltv:1.2, premium:"IVF / IUI cycles"},
+  {label:"Orthopaedics / Physio", ltv:1.6, premium:"surgeries, rehab packages"},
+  {label:"Gynaecology / Maternity", ltv:1.8, premium:"deliveries, laparoscopy"},
+  {label:"Paediatrics", ltv:3.0, premium:"vaccination & care packages"},
+  {label:"ENT / Eye / Other specialty", ltv:1.4, premium:"procedures & surgeries"},
+  {label:"General / Multi-specialty", ltv:2.2, premium:"health check-up packages, procedures"}
+];
+
+const PILLARS = {
+  demand:{name:"Patient Demand", short:"Demand"},
+  response:{name:"Lead Response", short:"Response"},
+  conversion:{name:"Conversion", short:"Conversion"},
+  authority:{name:"Digital Authority", short:"Authority"},
+  retention:{name:"Retention & Reviews", short:"Retention"}
+};
+
+// Profile questions (not scored) — used for the revenue estimate & lead qualification
+const PROFILE = [
+  {id:"spec", q:"What's your specialty?", sub:"We'll tailor the audit to your practice.", options:SPECIALTIES.map(s=>({label:s.label}))},
+  {id:"city", q:"Where is your clinic?", options:[{label:"Metro city"},{label:"Tier 2 city"},{label:"Tier 3 city / town"}]},
+  {id:"size", q:"How many doctors practise at your clinic?", options:[{label:"Just me"},{label:"2–4 doctors"},{label:"5+ doctors / hospital"}]},
+  {id:"enq", q:"How many new-patient enquiries do you get per month?", sub:"Calls + WhatsApp + Instagram DMs + walk-in enquiries.", options:[
+    {label:"Fewer than 20",v:12},{label:"20 – 50",v:35},{label:"50 – 100",v:75},{label:"100 – 200",v:150},{label:"200+",v:250}]},
+  {id:"fee", q:"Average fee of your main treatment ({premium})?", sub:"A rough range is fine.", options:[
+    {label:"Under ₹3,000",v:2000},{label:"₹3,000 – ₹10,000",v:6500},{label:"₹10,000 – ₹25,000",v:17500},{label:"₹25,000 – ₹75,000",v:50000},{label:"₹75,000+",v:100000}]},
+  {id:"spend", q:"Current monthly marketing spend?", sub:"Ads + agency + content, all-in.", options:[
+    {label:"Nothing yet"},{label:"Under ₹25,000"},{label:"₹25,000 – ₹1 lakh"},{label:"Over ₹1 lakh"}]}
+];
+
+// Scored questions: options carry points 0–3 (+ model values for the leak estimate)
+const QUESTIONS = [
+  {id:"d1",p:"demand",q:"How predictable are your new enquiries week to week?",options:[
+    {label:"Very unpredictable — some weeks are dead",pts:0},{label:"Somewhat — depends on season",pts:1},{label:"Mostly predictable",pts:2},{label:"We can forecast and increase them when we want",pts:3}],
+   svc:["Lead Generation Ads", "Meta & Google campaigns that bring treatment-specific enquiries every week."],
+   fix:["Build a predictable enquiry engine","Run always-on, treatment-specific ads so enquiries don't depend on season or luck."]},
+  {id:"d2",p:"demand",q:"Where do most of your new patients come from?",options:[
+    {label:"Word of mouth & walk-ins only",pts:0},{label:"Mostly referrals, a little online",pts:1},{label:"A mix of Google, Instagram & referrals",pts:2},{label:"Several channels, including paid ads we can scale",pts:3}],
+   svc:["Google Business Profile Optimisation", "We optimise your Google profile so nearby patients find and call you first."],
+   fix:["Stop depending on word of mouth alone","Add at least two channels you control — Google Business Profile and Instagram with a clear enquiry path."]},
+  {id:"d3",p:"demand",q:"How much of your demand is for {premium}?",options:[
+    {label:"Very little — mostly basic consults",pts:0},{label:"About 10–25%",pts:1},{label:"About 25–50%",pts:2},{label:"More than half",pts:3}],
+   svc:["Premium Treatment Campaigns", "Ads and content built around your highest-value treatments."],
+   fix:["Market your premium treatments, not just consults","Create dedicated content and pages for your 2–3 highest-value treatments."]},
+
+  {id:"r1",p:"response",q:"How quickly does someone reply to a new enquiry?",options:[
+    {label:"Same day or later",pts:0},{label:"Within 1–3 hours",pts:1},{label:"Within 30 minutes",pts:2},{label:"Under 5 minutes, every time",pts:3}],
+   svc:["WhatsApp AI Chat Agent", "Replies to every enquiry in seconds, 24×7, answers FAQs and books appointments."],
+   fix:["Reply within 5 minutes","Speed wins the patient. Set up an instant WhatsApp auto-reply plus a staff call-back rule."]},
+  {id:"r2",p:"response",q:"What happens when an enquiry doesn't book?",options:[
+    {label:"Nothing — we wait for them to call back",pts:0},{label:"Sometimes one follow-up call",pts:1},{label:"Staff follows up 2–3 times",pts:2},{label:"Automated WhatsApp sequence + staff calls",pts:3}],
+   svc:["WhatsApp Nurture Automation", "Automatic follow-ups that bring back enquiries who didn't book."],
+   fix:["Add a follow-up sequence","Most patients need 3–5 touches before booking. Automate a WhatsApp nurture sequence for everyone who doesn't book."]},
+  {id:"r3",p:"response",q:"How do you track enquiries?",options:[
+    {label:"We don't track them",pts:0},{label:"Register / notebook",pts:1},{label:"Excel or Google Sheet",pts:2},{label:"CRM with lead source tracking",pts:3}],
+   svc:["Clinic CRM Setup", "Every enquiry tracked with its source, so you know which channel brings paying patients."],
+   fix:["Track every enquiry and its source","Move to a simple CRM so you know which channel brings paying patients — and stop funding the ones that don't."]},
+
+  {id:"c1",p:"conversion",q:"Out of 10 enquiries, how many book an appointment?",options:[
+    {label:"1–2",pts:0,v:.15},{label:"3–4",pts:1,v:.35},{label:"5–6",pts:2,v:.55},{label:"7 or more",pts:3,v:.75},{label:"Honestly, I don't know",pts:0,v:.25}],
+   svc:["WhatsApp Booking Flow", "A guided booking flow plus a front-desk call script that turns enquiries into appointments."],
+   fix:["Fix enquiry-to-appointment conversion","Give your front desk a call script and a WhatsApp booking flow with fixed slot options."]},
+  {id:"c2",p:"conversion",q:"How often do booked patients not show up?",options:[
+    {label:"We don't track no-shows",pts:0,v:.25},{label:"Often — 1 in 4 or more",pts:1,v:.28},{label:"Sometimes — about 1 in 10",pts:2,v:.12},{label:"Rarely — we send automated reminders",pts:3,v:.05}],
+   svc:["Appointment Reminder Automation", "Automatic WhatsApp reminders before every appointment to cut no-shows."],
+   fix:["Cut no-shows with reminders","Send automated WhatsApp reminders 24 hours and 2 hours before every appointment."]},
+  {id:"c3",p:"conversion",q:"After consultation, how many patients go ahead with the recommended treatment?",options:[
+    {label:"Most say \"I'll think about it\"",pts:0,v:.2},{label:"About a third",pts:1,v:.33},{label:"About half",pts:2,v:.5},{label:"Most — we offer packages / EMI and follow up",pts:3,v:.65}],
+   svc:["Treatment Follow-up Sequences", "Patient-education messages and follow-ups that help patients say yes."],
+   fix:["Help patients say yes to treatment","Use clear treatment packages, EMI options and a structured post-consult follow-up call."]},
+
+  {id:"a1",p:"authority",q:"How many Google reviews does your clinic have?",options:[
+    {label:"Under 20 (or no Google profile)",pts:0},{label:"20 – 100",pts:1},{label:"100 – 300",pts:2},{label:"300+, with new reviews every week",pts:3}],
+   svc:["Google Review System", "A simple QR + WhatsApp system that brings in new reviews every week."],
+   fix:["Grow your Google reviews","Ask every happy patient — QR code at the front desk and a WhatsApp review link after the visit."]},
+  {id:"a2",p:"authority",q:"How would you describe your Instagram?",options:[
+    {label:"Not active",pts:0},{label:"Occasional posts — mostly greetings & offers",pts:1},{label:"Regular educational posts",pts:2},{label:"Consistent doctor-led reels; enquiries come via DM",pts:3}],
+   svc:["Instagram Content & Reels Management", "Doctor-led reels and posts that build trust and bring enquiries via DM."],
+   fix:["Turn Instagram into an enquiry channel","Post doctor-led educational reels with a clear \"WhatsApp us to book\" call to action."]},
+  {id:"a3",p:"authority",q:"What about your website or landing pages?",options:[
+    {label:"No website",pts:0},{label:"Basic site, rarely updated",pts:1},{label:"Good site, but no booking / WhatsApp button",pts:2},{label:"Treatment-specific pages built to convert",pts:3}],
+   svc:["Treatment Landing Pages", "High-converting pages for your key treatments, with WhatsApp and booking buttons."],
+   fix:["Build treatment landing pages","One focused page per key treatment, with WhatsApp and booking buttons above the fold."]},
+
+  {id:"t1",p:"retention",q:"Do past patients get recall or follow-up reminders?",options:[
+    {label:"No",pts:0},{label:"Occasionally, done manually",pts:1},{label:"For some treatments",pts:2},{label:"Yes — automated recall system",pts:3}],
+   svc:["Patient Recall & Reactivation", "Automated recall for follow-ups and repeat sessions, plus broadcasts to past patients."],
+   fix:["Set up patient recall","Automated reminders for follow-ups, check-ups and repeat sessions bring back revenue you've already earned."]},
+  {id:"t2",p:"retention",q:"Do you ask happy patients for reviews or referrals?",options:[
+    {label:"Never",pts:0},{label:"Sometimes, verbally",pts:1},{label:"Staff asks regularly",pts:2},{label:"Automated review & referral requests",pts:3}],
+   svc:["Review & Referral Automation", "Automatic review and referral requests after every successful visit."],
+   fix:["Systemise reviews and referrals","Ask at the moment of delight — automatically, after every successful visit."]},
+  {id:"t3",p:"retention",q:"What do you do on slow days?",options:[
+    {label:"Nothing — we just wait",pts:0},{label:"Run discounts when it gets slow",pts:1},{label:"Planned campaigns",pts:2},{label:"A ready system: past-patient broadcasts, camps, packages",pts:3}],
+   svc:["Slow-Day Campaigns", "Ready-to-run reactivation broadcasts and seasonal packages to fill empty slots."],
+   fix:["Plan for slow days","Keep a ready playbook: reactivation broadcasts to past patients, health camps and seasonal packages."]}
+];
+
+const STEPS = [...PROFILE.map(x=>({...x,kind:"profile"})), ...QUESTIONS.map(x=>({...x,kind:"q"}))];
+const BENCH = {book:.5, noshow:.08, accept:.5};
+
+let state = {step:-1, answers:{}, lead:null};
+const $app = document.getElementById("app");
+
+function premium(){ const i = state.answers.spec; return i==null ? "your premium treatments" : SPECIALTIES[i].premium; }
+function fill(t){ return t.replace("{premium}", premium()); }
+function esc(s){ return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+function inr(n){
+  if(n>=1e7) return "₹"+(n/1e7).toFixed(n>=1e8?0:1).replace(/\.0$/,"")+" Cr";
+  if(n>=1e5) return "₹"+(n/1e5).toFixed(1).replace(/\.0$/,"")+" L";
+  return "₹"+Math.round(n).toLocaleString("en-IN");
+}
+function round5k(n){ return n<20000 ? Math.max(0, Math.round(n/1000)*1000) : Math.round(n/5000)*5000; }
+
+const brandHTML = `<div class="brand"><div class="logo">DDG</div><div><b>${CONFIG.brand}</b><span>Clinic Growth Systems for Doctors</span></div></div>`;
+
+/* ---------- Screens ---------- */
+function renderIntro(){
+  $app.innerHTML = brandHTML + `
+  <div class="card hero fade">
+    <span class="pill" style="background:rgba(242,169,59,.16);color:var(--amber)">Free 3-minute audit</span>
+    <h1>How much revenue is your clinic <em>leaking</em> every month?</h1>
+    <p class="lead">Answer 21 quick questions about how patients find, contact and choose your clinic. Get your Clinic Growth Score instantly.</p>
+    <ul class="gets">
+      <li><i>1</i><span>Your <b>Clinic Growth Score</b> out of 100, across 5 growth areas</span></li>
+      <li><i>2</i><span>An estimate of the <b>₹ you're losing each month</b> to missed enquiries, no-shows and drop-offs</span></li>
+      <li><i>3</i><span>Your <b>top 3 fixes</b>, ranked by impact</span></li>
+    </ul>
+    <button class="btn btn-amber" id="start">Start my free audit →</button>
+    <div class="meta"><span>⏱ 3 minutes</span><span>🔒 Private</span><span>₹0</span></div>
+    <div class="byline">Created by <b>${CONFIG.founder}</b>, Founder, ${CONFIG.brand} · Ex-Accenture Business Consultant · Certified Digital Marketing Specialist</div>
+  </div>`;
+  document.getElementById("start").onclick = ()=>{ state.step=0; render(); };
+}
+
+function renderStep(){
+  const s = STEPS[state.step];
+  const total = STEPS.length;
+  const pct = (state.step/total)*100;
+  const label = s.kind==="profile" ? "About your clinic" : PILLARS[s.p].name;
+  const sel = state.answers[s.id];
+  $app.innerHTML = brandHTML + `
+  <div class="card">
+    <div class="top">
+      <button class="back" id="back" ${state.step===0?"disabled":""} aria-label="Back">←</button>
+      <div class="bar"><div style="width:${pct}%"></div></div>
+      <div class="count">${state.step+1}/${total}</div>
+    </div>
+    <div class="fade" key="${s.id}">
+      <span class="pill">${label}</span>
+      <div class="q">${esc(fill(s.q))}</div>
+      ${s.sub?`<div class="sub">${esc(s.sub)}</div>`:`<div style="height:12px"></div>`}
+      <div class="opts">
+        ${s.options.map((o,i)=>`<button class="opt ${sel===i?"sel":""}" data-i="${i}"><span class="dot"></span><span>${esc(o.label)}</span></button>`).join("")}
+      </div>
+    </div>
+  </div>`;
+  document.getElementById("back").onclick = ()=>{ state.step--; render(); };
+  $app.querySelectorAll(".opt").forEach(b=>b.onclick = ()=>{
+    state.answers[s.id] = +b.dataset.i;
+    $app.querySelectorAll(".opt").forEach(x=>x.classList.remove("sel"));
+    b.classList.add("sel");
+    setTimeout(()=>{ state.step++; render(); }, 260);
+  });
+}
+
+function renderGate(){
+  $app.innerHTML = brandHTML + `
+  <div class="card fade">
+    <div class="top">
+      <button class="back" id="back" aria-label="Back">←</button>
+      <div class="bar"><div style="width:100%"></div></div>
+      <div class="count">Done</div>
+    </div>
+    <h2>Your clinic report is ready 🎉</h2>
+    <p class="lead">Tell us where to send it. You'll see your results on the next screen right away.</p>
+    <div class="teaser"><div class="blur">72/100</div><p><b>Growth Score, ₹ leak estimate & top 3 fixes</b><br>unlock below</p></div>
+    <form id="f" novalidate>
+      <div class="field" id="f-name"><label>Doctor's name</label><input name="name" placeholder="Dr. Ananya Sharma" autocomplete="name"><div class="err">Please enter your name</div></div>
+      <div class="field" id="f-clinic"><label>Clinic name</label><input name="clinic" placeholder="Glow Skin Clinic" autocomplete="organization"><div class="err">Please enter your clinic name</div></div>
+      <div class="field" id="f-cityname"><label>City</label><input name="cityname" placeholder="Indore" autocomplete="address-level2"><div class="err">Please enter your city</div></div>
+      <div class="field" id="f-phone"><label>WhatsApp number</label><div class="phone"><span>+91</span><input name="phone" inputmode="numeric" maxlength="10" placeholder="10-digit mobile number" autocomplete="tel-national"></div><div class="err">Please enter a valid 10-digit mobile number</div></div>
+      <div class="field" id="f-email"><label>Email <span style="font-weight:400;color:var(--muted)">(optional)</span></label><input name="email" type="email" placeholder="you@clinic.com" autocomplete="email"><div class="err">That email doesn't look right</div></div>
+      <label class="consent"><input type="checkbox" name="consent" checked><span>I agree to receive my report and growth tips from ${CONFIG.brand} on WhatsApp. No spam — unsubscribe anytime.</span></label>
+      <button class="btn btn-teal" type="submit">Show my results →</button>
+    </form>
+  </div>`;
+  document.getElementById("back").onclick = ()=>{ state.step = STEPS.length-1; render(); };
+  document.getElementById("f").onsubmit = e=>{
+    e.preventDefault();
+    const fd = new FormData(e.target);
+    const d = Object.fromEntries(fd.entries());
+    d.phone = (d.phone||"").replace(/\D/g,"");
+    let ok = true;
+    const check=(id,cond)=>{ document.getElementById("f-"+id).classList.toggle("bad",!cond); if(!cond) ok=false; };
+    check("name", d.name.trim().length>1);
+    check("clinic", d.clinic.trim().length>1);
+    check("cityname", d.cityname.trim().length>1);
+    check("phone", /^[6-9]\d{9}$/.test(d.phone));
+    check("email", !d.email || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(d.email));
+    if(!ok) return;
+    state.lead = d;
+    state.step = "results";
+    const r = compute();
+    sendToSheet(r);
+    render();
+    window.scrollTo({top:0,behavior:"smooth"});
+  };
+}
+
+/* ---------- Scoring ---------- */
+function compute(){
+  const a = state.answers;
+  const pillar = {};
+  Object.keys(PILLARS).forEach(k=>pillar[k]={sum:0,max:0});
+  const items = [];
+  QUESTIONS.forEach(q=>{
+    const o = q.options[a[q.id]];
+    pillar[q.p].sum += o.pts; pillar[q.p].max += 3;
+    items.push({q, pts:o.pts});
+  });
+  const pScores = {};
+  Object.keys(pillar).forEach(k=>pScores[k] = Math.round(pillar[k].sum/pillar[k].max*20));
+  const score = Object.values(pScores).reduce((s,v)=>s+v,0);
+
+  // Simple, explainable leak model:
+  // enquiries/month × share that slips away (10–30%, set by score) × value per patient (½ fee – full fee)
+  const E = PROFILE[3].options[a.enq].v;
+  const T = PROFILE[4].options[a.fee].v;
+  const lostPct = Math.round(Math.min(30, Math.max(10, 30 - score*0.2)));
+  const lostPatients = Math.max(1, Math.round(E*lostPct/100));
+  const valLo = T*0.5, valHi = T;
+  const lo = round5k(lostPatients*valLo), hi = round5k(lostPatients*valHi);
+  const causes = [
+    {label:"Slow replies & no follow-up", w:20-pScores.response},
+    {label:"No-shows & patients who don't start treatment", w:20-pScores.conversion},
+    {label:"Choosing a clinic with stronger Google & Instagram", w:20-(pScores.authority+pScores.demand)/2},
+    {label:"Past patients who don't come back", w:20-pScores.retention}
+  ];
+  const wSum = causes.reduce((t,c)=>t+c.w,0) || 1;
+  causes.forEach(c=>{ c.exact = lostPatients*c.w/wSum; c.n = Math.floor(c.exact); });
+  let left = lostPatients - causes.reduce((t,c)=>t+c.n,0);
+  causes.slice().sort((x,y)=>(y.exact-y.n)-(x.exact-x.n)).forEach(c=>{ if(left>0){ c.n++; left--; } });
+  const streams = causes.filter(c=>c.n>0).sort((x,y)=>y.n-x.n);
+
+  // Top 3 fixes: lowest-scoring questions, tie-break by weakest pillar, then by revenue impact order
+  const impact = ["r1","c1","r2","c2","c3","d1","a1","a2","d2","t1","a3","d3","r3","t2","t3"];
+  const ranked = items.slice().sort((x,y)=> x.pts-y.pts || impact.indexOf(x.q.id)-impact.indexOf(y.q.id));
+  const fixes = ranked.slice(0,3), nextFix = ranked[3];
+
+  let tier;
+  if(score<40) tier={name:"Leaking",offer:"DDG Complete Clinic Growth System",offerLine:"Demand, WhatsApp automation and follow-ups set up together, so every gap above gets fixed in one go.",color:"var(--red)",bg:"#FBE7E2",msg:"Your clinic has real demand, but key gaps in follow-up, conversion and visibility are letting patients — and revenue — slip away every week."};
+  else if(score<70) tier={name:"Stable but Stuck",offer:"DDG 90-Day Growth Sprint",offerLine:"We fix your top 3 gaps first and make your patient flow predictable within 90 days.",color:"var(--amber-d)",bg:"#FDF0D9",msg:"You've built a working practice, but growth depends on effort and luck. A few systems would make your patient flow predictable."};
+  else tier={name:"Scale-Ready",offer:"DDG Performance Scaling",offerLine:"Your foundations are strong. We scale high-intent ads for your premium treatments.",color:"var(--green)",bg:"#DDF2E7",msg:"Strong foundations. You're ready to scale with performance marketing and automation — without adding chaos for your team."};
+
+  const weakest = Object.keys(pScores).sort((x,y)=>pScores[x]-pScores[y])[0];
+  const spend = a.spend;
+  const hot = (a.enq>=2 && a.fee>=2 && score<70) || (spend>=2 && score<70);
+  const leadTier = hot ? "HOT" : (score<70 ? "WARM" : "NURTURE");
+
+  return {score, pScores, tier, lo, hi, streams, lostPct, lostPatients, valLo, valHi, fixes, nextFix, items, weakest, E, T, leadTier};
+}
+
+/* ---------- Results ---------- */
+function ringSVG(score, color){
+  const r=46, c=2*Math.PI*r, off=c*(1-score/100);
+  return `<svg class="ring" width="116" height="116" viewBox="0 0 116 116">
+    <circle cx="58" cy="58" r="${r}" fill="none" stroke="#E3E8E6" stroke-width="11"/>
+    <circle cx="58" cy="58" r="${r}" fill="none" stroke="${color}" stroke-width="11" stroke-linecap="round"
+      stroke-dasharray="${c}" stroke-dashoffset="${off}" transform="rotate(-90 58 58)"/>
+    <text x="58" y="60" text-anchor="middle" font-family="Lora,serif" font-size="30" font-weight="700" fill="#0B3B39">${score}</text>
+    <text x="58" y="79" text-anchor="middle" font-family="Inter,sans-serif" font-size="11" fill="#5B6B69">out of 100</text>
+  </svg>`;
+}
+function radarSVG(p){
+  const keys = Object.keys(PILLARS), cx=180, cy=140, R=88, n=keys.length;
+  const pt=(i,f)=>{ const ang=-Math.PI/2 + i*2*Math.PI/n; return [cx+R*f*Math.cos(ang), cy+R*f*Math.sin(ang)]; };
+  let grid="";
+  [0.25,0.5,0.75,1].forEach(f=>{ grid+=`<polygon points="${keys.map((_,i)=>pt(i,f).join(",")).join(" ")}" fill="none" stroke="#E3E8E6"/>`; });
+  keys.forEach((_,i)=>{ const [x,y]=pt(i,1); grid+=`<line x1="${cx}" y1="${cy}" x2="${x}" y2="${y}" stroke="#E3E8E6"/>`; });
+  const poly = keys.map((k,i)=>pt(i,Math.max(.04,p[k]/20)).join(",")).join(" ");
+  const labels = keys.map((k,i)=>{ const [x,y]=pt(i,1.2); const anchor = Math.abs(x-cx)<5?"middle":(x>cx?"start":"end"); return `<text x="${x}" y="${y+4}" text-anchor="${anchor}">${PILLARS[k].short} ${p[k]}</text>`; }).join("");
+  return `<svg class="radar" viewBox="0 0 360 280" width="100%" style="max-width:380px;display:block;margin:0 auto">${grid}
+    <polygon points="${poly}" fill="rgba(31,138,130,.22)" stroke="#14615C" stroke-width="2"/>
+    ${keys.map((k,i)=>{const [x,y]=pt(i,Math.max(.04,p[k]/20));return `<circle cx="${x}" cy="${y}" r="3.5" fill="#14615C"/>`}).join("")}
+    ${labels}</svg>`;
+}
+function barColor(v){ return v<8?"var(--red)":(v<14?"var(--amber)":"var(--green)"); }
+
+function waLink(text){
+  const base = CONFIG.whatsapp ? `https://wa.me/${CONFIG.whatsapp}` : "https://wa.me/";
+  return `${base}?text=${encodeURIComponent(text)}`;
+}
+
+
+function leakCard(r){
+  return `<div class="card leak">
+      <h3>Estimated revenue leak</h3>
+      <div class="amt">${inr(r.lo)} – ${inr(r.hi)}</div>
+      <p>every month · <b style="color:#fff">${inr(r.lo*12)} – ${inr(r.hi*12)} a year</b></p>
+      <div class="calc">
+        <div class="cl"><span>Your enquiries per month</span><b>~${r.E}</b></div>
+        <div class="cl"><span>Slipping away (based on your score)</span><b>${r.lostPct}% ≈ ${r.lostPatients} patients</b></div>
+        <div class="cl"><span>Value per patient</span><b>${inr(r.valLo)} – ${inr(r.valHi)}</b></div>
+        <div class="cl tot"><span>${r.lostPatients} patients × value</span><b>${inr(r.lo)} – ${inr(r.hi)}</b></div>
+      </div>
+      <h3 style="margin-top:18px">Where these ${r.lostPatients} patients slip away</h3>
+      <div class="streams">
+        ${r.streams.map(x=>`<div class="st"><div class="st-top"><span>${x.label}</span><b>~${x.n} patient${x.n>1?"s":""}</b></div><div class="st-bar"><div style="width:${Math.max(6,x.n/r.streams[0].n*100)}%"></div></div></div>`).join("")}
+      </div>
+      <details><summary>How we calculated this</summary>
+        <p>Every clinic loses some enquiries. Well-run clinics lose about 10%; clinics with big gaps lose up to 30%. Your score of ${r.score}/100 puts you at about ${r.lostPct}%. Each lost patient is valued between half your main treatment fee (some only needed a consultation) and the full fee (${inr(r.T)}). Repeat visits and referrals are not counted, so the real figure is likely higher. This is an estimate, not a guarantee.</p>
+      </details>
+    </div>`;
+}
+
+function renderResults(){
+  const r = compute(), L = state.lead, spec = SPECIALTIES[state.answers.spec].label;
+  const first = L.name.trim().replace(/^dr\.?\s*/i,"").split(/\s+/)[0];
+  const leakLine = r.hi>0 ? `${inr(r.lo)} – ${inr(r.hi)} / month` : "Minimal";
+  const reportMsg = `Hi ${CONFIG.founder.split(" ")[0]}, I just took the Clinic Revenue Leak Audit.\n\n`+
+    `Name: ${L.name}\nClinic: ${L.clinic}, ${L.cityname}\nSpecialty: ${spec}\n`+
+    `Growth Score: ${r.score}/100 (${r.tier.name})\nEstimated leak: ${leakLine}\nWeakest area: ${PILLARS[r.weakest].name}\n\n`+
+    `Recommended for me: ${r.fixes.map(f=>f.q.svc[0]).join(", ")}\n\nMy full report: ${reportLink()}\n\nI'd like to discuss this on a call.`;
+  const callMsg = `Hi ${CONFIG.founder.split(" ")[0]}, I'm ${L.name} from ${L.clinic}, ${L.cityname}. My Clinic Growth Score is ${r.score}/100. I'd like to book the free 20-minute growth call.`;
+  const bookHref = CONFIG.bookingUrl || waLink(callMsg);
+
+  $app.innerHTML = brandHTML + `
+  <div class="stack fade">
+    <div class="card">
+      <span class="pill">${esc(spec)} · Results for Dr. ${esc(first)}</span>
+      <div class="score-wrap">
+        ${ringSVG(r.score, r.tier.color)}
+        <div>
+          <span class="tier" style="color:${r.tier.color};background:${r.tier.bg}">${r.tier.name}</span>
+          <h2 style="font-size:20px">Clinic Growth Score</h2>
+          <p style="font-size:13.5px;color:var(--muted)">${esc(L.clinic)}, ${esc(L.cityname)}</p>
+        </div>
+      </div>
+      <p style="margin-top:14px;font-size:14.5px">${r.tier.msg}</p>
+    </div>
+
+    ${leakCard(r)}
+
+    <div class="card">
+      <h2>Your 5 growth areas</h2>
+      <p class="sub" style="margin-bottom:6px">Each scored out of 20</p>
+      ${radarSVG(r.pScores)}
+      <div class="pbars">
+        ${Object.keys(PILLARS).map(k=>`<div class="pb-row"><span>${PILLARS[k].short}</span><div class="t"><div style="width:${r.pScores[k]/20*100}%;background:${barColor(r.pScores[k])}"></div></div><b>${r.pScores[k]}/20</b></div>`).join("")}
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Your top 3 fixes</h2>
+      <p class="sub" style="margin-bottom:8px">Start here — these will move your numbers fastest. Do them yourself, or let DDG set them up for you.</p>
+      ${r.fixes.map((f,i)=>`<div class="fix"><div class="n">${i+1}</div><div style="flex:1"><h4>${esc(f.q.fix[0])}</h4><small>${PILLARS[f.q.p].name}</small>
+        <div class="diy"><span class="lbl">Do it yourself</span><p>${esc(f.q.fix[1])}</p></div>
+        <div class="dfy"><span class="lbl">Done for you by DDG</span><b>${esc(f.q.svc[0])}</b><p>${esc(f.q.svc[1])}</p>
+        <a href="${waLink(`Hi ${CONFIG.founder.split(" ")[0]}, I'm ${L.name} from ${L.clinic}, ${L.cityname}. My audit suggested ${f.q.svc[0]}. Can you tell me more?`)}" target="_blank" rel="noopener">Ask about this →</a></div>
+      </div></div>`).join("")}
+    </div>
+
+    <div class="card cta">
+      <span class="pill" style="background:#FDF0D9;color:var(--amber-d)">Recommended for you</span>
+      <h2>${r.tier.offer}</h2>
+      <p style="font-size:14.5px;color:var(--muted);margin-top:6px">${r.tier.offerLine} Open your full report, or book a free 20-minute Growth Call with ${CONFIG.founder}.</p>
+      <div class="btns">
+        <button class="btn btn-amber" id="viewReport">📄 View my full report</button>
+        <a class="btn btn-ghost" href="${waLink(reportMsg)}" target="_blank" rel="noopener">📲 Send my report to ${CONFIG.founder.split(" ")[0]} on WhatsApp</a>
+        <a class="btn btn-teal" href="${bookHref}" target="_blank" rel="noopener">Book my free Growth Call →</a>
+      </div>
+      ${CONFIG.whatsapp?`<p class="note">Or message us directly: +${CONFIG.whatsapp}</p>`:""}
+    </div>
+
+    <p class="note">Scores and estimates are based on your answers and typical benchmarks for Indian clinics. They're a starting point for discussion, not a guarantee of results.<br>
+    <button class="small-link" id="restart">Retake the audit</button></p>
+  </div>`;
+  document.getElementById("restart").onclick = ()=>{ state={step:-1,answers:{},lead:null}; render(); window.scrollTo({top:0}); };
+  document.getElementById("viewReport").onclick = openReport;
+}
+
+
+/* ---------- Report links: answers + name/clinic/city packed into #r-<digits>-<hex> ---------- */
+function toHex(str){ return Array.from(new TextEncoder().encode(str)).map(b=>b.toString(16).padStart(2,"0")).join(""); }
+function fromHex(h){ return new TextDecoder().decode(new Uint8Array((h.match(/../g)||[]).map(x=>parseInt(x,16)))); }
+function reportCode(){
+  const L = state.lead;
+  return "r-" + STEPS.map(st=>state.answers[st.id]).join("") + "-" + toHex([L.name,L.clinic,L.cityname].join("|"));
+}
+function reportLink(){ return CONFIG.reportUrl + "#" + reportCode(); }
+function loadFromHash(){
+  let h = ""; try{ h = location.hash || ""; }catch(e){}
+  const m = h.match(/^#r-(\d+)-([0-9a-f]*)$/);
+  if(!m || m[1].length!==STEPS.length) return false;
+  const answers = {};
+  for(let i=0;i<STEPS.length;i++){ const v=+m[1][i]; if(v>=STEPS[i].options.length) return false; answers[STEPS[i].id]=v; }
+  let parts=["","",""]; try{ parts = fromHex(m[2]).split("|"); }catch(e){}
+  state = {step:"report", answers, lead:{name:parts[0]||"Doctor", clinic:parts[1]||"Your clinic", cityname:parts[2]||""}, fromLink:!state.lead || state.step!=="results"};
+  return true;
+}
+function openReport(){
+  try{ location.hash = reportCode(); }catch(e){}
+  state.fromLink = false; state.step = "report"; render(); window.scrollTo({top:0});
+}
+
+function renderReport(){
+  const r = compute(), L = state.lead, a = state.answers, spec = SPECIALTIES[a.spec].label;
+  const first = L.name.trim().replace(/^dr\.?\s*/i,"").split(/\s+/)[0];
+  const today = new Date().toLocaleDateString("en-IN",{day:"numeric",month:"long",year:"numeric"});
+  const icon = pts => pts>=2 ? `<span class="ic ok">✓</span>` : (pts===1 ? `<span class="ic mid">!</span>` : `<span class="ic bad">✕</span>`);
+  const ans = id => { const q=QUESTIONS.find(x=>x.id===id); const o=q.options[a[id]]; return {label:o.label, pts:o.pts}; };
+  const bench = [
+    ["Reply to new enquiries","r1","Under 5 minutes"],
+    ["Follow-up if they don't book","r2","Automated WhatsApp + staff calls"],
+    ["Enquiries that book (out of 10)","c1","5 or more"],
+    ["No-shows","c2","Under 1 in 10"],
+    ["Patients who go ahead with treatment","c3","About half or more"],
+    ["Google reviews","a1","100+, growing every week"],
+    ["Patient recall","t1","Automated"]
+  ];
+  const verdict = v => v>=14 ? ["Working well","var(--green)"] : (v>=8 ? ["Needs work","var(--amber-d)"] : ["Critical gap","var(--red)"]);
+  const plan = [...r.fixes, r.nextFix].filter(Boolean);
+  const callMsg = `Hi ${CONFIG.founder.split(" ")[0]}, I'm ${L.name} from ${L.clinic}${L.cityname?", "+L.cityname:""}. I've read my Clinic Growth Report (score ${r.score}/100) and would like to book the free 20-minute growth call.`;
+  const bookHref = CONFIG.bookingUrl || waLink(callMsg);
+
+  $app.innerHTML = brandHTML + `
+  <div class="stack fade report">
+    ${state.fromLink ? "" : `<button class="small-link" id="toResults" style="margin:0 0 -4px;text-align:left">← Back to results</button>`}
+    <div class="card">
+      <span class="pill">Clinic Growth Report · ${today}</span>
+      <h1 style="font-size:25px;margin-bottom:4px">Dr. ${esc(first)}, here's your full report</h1>
+      <p style="color:var(--muted);font-size:14px">${esc(L.clinic)}${L.cityname?", "+esc(L.cityname):""} · ${esc(spec)}</p>
+      <div class="score-wrap" style="margin-top:16px">
+        ${ringSVG(r.score, r.tier.color)}
+        <div><span class="tier" style="color:${r.tier.color};background:${r.tier.bg}">${r.tier.name}</span>
+        <p style="font-size:14px">${r.tier.msg}</p></div>
+      </div>
+    </div>
+
+    <div class="sec-h"><span>1</span>What this is costing you</div>
+    ${leakCard(r)}
+
+    <div class="sec-h"><span>2</span>Your clinic vs a well-run clinic</div>
+    <div class="card" style="padding:8px 18px">
+      ${bench.map(([lab,id,b])=>{ const x=ans(id); return `<div class="cmp">${icon(x.pts)}<div><b>${lab}</b><div class="cmp-r"><span>You: ${esc(x.label)}</span><span>Well-run clinic: ${b}</span></div></div></div>`; }).join("")}
+    </div>
+
+    <div class="sec-h"><span>3</span>Area-by-area review</div>
+    ${Object.keys(PILLARS).map(k=>{ const v=r.pScores[k], [vt,vc]=verdict(v); return `<div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px"><h3>${PILLARS[k].name}</h3><b style="color:${vc};font-size:13px;white-space:nowrap">${v}/20 · ${vt}</b></div>
+      <div class="pb-row" style="grid-template-columns:1fr;margin:8px 0 6px"><div class="t"><div style="width:${v/20*100}%;background:${barColor(v)}"></div></div></div>
+      ${QUESTIONS.filter(q=>q.p===k).map(q=>{ const o=q.options[a[q.id]]; return `<div class="rv">${icon(o.pts)}<div><p class="rq">${esc(fill(q.q))}</p><p class="ra">${esc(o.label)}</p>${o.pts<2?`<p class="rf">→ ${esc(q.fix[1])}</p>`:""}</div></div>`; }).join("")}
+    </div>`; }).join("")}
+
+    <div class="sec-h"><span>4</span>Your 30-day action plan</div>
+    <div class="card">
+      ${plan.map((f,i)=>`<div class="wk"><div class="wk-n">Week ${i+1}</div><div><h4>${esc(f.q.fix[0])}</h4><p>${esc(f.q.fix[1])}</p><p class="wk-s">DDG can set this up: <b>${esc(f.q.svc[0])}</b></p></div></div>`).join("")}
+    </div>
+
+    <div class="sec-h"><span>5</span>How DDG can help</div>
+    <div class="card cta">
+      <span class="pill" style="background:#FDF0D9;color:var(--amber-d)">Recommended for you</span>
+      <h2>${r.tier.offer}</h2>
+      <p style="font-size:14.5px;color:var(--muted);margin-top:6px">${r.tier.offerLine}</p>
+      <div style="margin-top:12px">
+        ${r.fixes.map(f=>`<div class="svc-row"><b>${esc(f.q.svc[0])}</b><span>${esc(f.q.svc[1])}</span></div>`).join("")}
+      </div>
+      <div class="btns">
+        <a class="btn btn-teal" href="${bookHref}" target="_blank" rel="noopener">Book my free 20-min Growth Call →</a>
+        <button class="btn btn-ghost" id="copyLink">🔗 Copy report link</button>
+      </div>
+      <p class="note" id="copyNote" style="display:none"></p>
+    </div>
+
+    <p class="note">Prepared by ${CONFIG.founder}, Founder, ${CONFIG.brand}. Scores and estimates are based on the answers given and typical benchmarks for Indian clinics; they're a starting point for discussion, not a guarantee of results.</p>
+  </div>`;
+  const tr = document.getElementById("toResults");
+  if(tr) tr.onclick = ()=>{ try{ history.replaceState(null,"",location.pathname+location.search); }catch(e){} state.step="results"; render(); window.scrollTo({top:0}); };
+  document.getElementById("copyLink").onclick = async ()=>{
+    const n = document.getElementById("copyNote"), link = reportLink();
+    try{ await navigator.clipboard.writeText(link); n.textContent = "Link copied."; }
+    catch(e){ n.textContent = link; }
+    n.style.display = "block";
+  };
+}
+
+/* Optional: log the lead to a Google Sheet (works when self-hosted) */
+function sendToSheet(r){
+  if(!CONFIG.sheetWebhook) return;
+  const a = state.answers;
+  const payload = {
+    timestamp:new Date().toISOString(), ...state.lead,
+    specialty:SPECIALTIES[a.spec].label, cityTier:PROFILE[1].options[a.city].label,
+    doctors:PROFILE[2].options[a.size].label, enquiries:PROFILE[3].options[a.enq].label,
+    fee:PROFILE[4].options[a.fee].label, spend:PROFILE[5].options[a.spend].label,
+    score:r.score, tier:r.tier.name, leadTier:r.leadTier, leakLow:r.lo, leakHigh:r.hi,
+    ...Object.fromEntries(Object.entries(r.pScores).map(([k,v])=>["score_"+k,v])),
+    topFixes:r.fixes.map(f=>f.q.fix[0]).join(" | ")
+  };
+  try{ fetch(CONFIG.sheetWebhook,{method:"POST",mode:"no-cors",headers:{"Content-Type":"text/plain"},body:JSON.stringify(payload)}).catch(()=>{}); }catch(e){}
+}
+
+function render(){
+  if(state.step==="report") return renderReport();
+  if(state.step===-1) return renderIntro();
+  if(state.step==="results") return renderResults();
+  if(state.step>=STEPS.length) return renderGate();
+  renderStep();
+}
+loadFromHash();
+window.addEventListener("hashchange", ()=>{ if(loadFromHash()){ render(); window.scrollTo({top:0}); } });
+render();
+</script>
+</body>
+</html>
